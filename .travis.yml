@@ -5,6 +5,9 @@ otp_release:
 notifications:
   email:
     - vince@newrelic.com
+services:
+  - docker
 script:
+  - docker-compose up -d
   - mix format --check-formatted
   - mix test
