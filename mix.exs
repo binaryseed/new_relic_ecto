@@ -34,6 +34,7 @@ defmodule NewRelicEcto.MixProject do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
       {:ecto_sql, "~> 3.0"},
+      {:telemetry, "~> 0.2"},
       {:postgrex, ">= 0.0.0", only: :test}
     ]
   end
