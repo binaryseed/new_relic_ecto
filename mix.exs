@@ -32,7 +32,9 @@ defmodule NewRelicEcto.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, ">= 0.0.0", only: :dev}
+      {:ex_doc, ">= 0.0.0", only: :dev},
+      {:ecto_sql, "~> 3.0"},
+      {:postgrex, ">= 0.0.0", only: :test}
     ]
   end
 end
