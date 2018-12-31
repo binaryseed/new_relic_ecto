@@ -1,8 +1,20 @@
 defmodule NewRelicEctoTest do
   use ExUnit.Case
+  import Ecto.Query
 
-  defmodule Repo do
+  alias NewRelic.Harvest.Collector
+
+  # Wire up our Ecto Repo
+  defmodule TestRepo do
     use Ecto.Repo, otp_app: :new_relic_ecto, adapter: Ecto.Adapters.Postgres
+  end
+
+  defmodule TestItem do
+    use Ecto.Schema
+
+    schema "items" do
+      field :name
+    end
   end
 
   defmodule TestMigration do
@@ -15,14 +27,6 @@ defmodule NewRelicEctoTest do
     end
   end
 
-  defmodule Item do
-    use Ecto.Schema
-
-    schema "items" do
-      field :name
-    end
-  end
-
   @port 9999
   @config [
     database: "new_relic_ecto",
@@ -31,31 +35,49 @@ defmodule NewRelicEctoTest do
     hostname: "localhost",
     port: @port
   ]
-  Application.put_env(:new_relic_ecto, :ecto_repos, [__MODULE__.Repo])
-  Application.put_env(:new_relic_ecto, __MODULE__.Repo, @config)
+  Application.put_env(:new_relic_ecto, :ecto_repos, [__MODULE__.TestRepo])
+  Application.put_env(:new_relic_ecto, __MODULE__.TestRepo, @config)
 
-  test "Setup and query the DB" do
-    import Ecto.Query
+  setup_all do
+    # Instrument the Repo via Telemetry
+    NewRelic.Ecto.Telemetry.attach(repo: NewRelicEctoTest.TestRepo)
 
-    Telemetry.attach(
-      "new_relic_ecto",
-      [:new_relic_ecto_test, :repo, :query],
-      NewRelic.Ecto.TelemetryHandler,
-      :handle_event,
-      %{}
-    )
-
+    # Initialize and start the Repo
     Ecto.Adapters.Postgres.storage_down(@config)
     :ok = Ecto.Adapters.Postgres.storage_up(@config)
-    Repo.start_link()
-    Ecto.Migrator.run(Repo, [{0, TestMigration}], :up, all: true)
+    TestRepo.start_link()
+    Ecto.Migrator.run(TestRepo, [{0, TestMigration}], :up, all: true)
 
-    {:ok, _} = Repo.insert(%Item{name: "first"})
-    {:ok, _} = Repo.insert(%Item{name: "second"})
-    {:ok, _} = Repo.insert(%Item{name: "third"})
+    :ok
+  end
 
-    items = Repo.all(from(i in Item))
+  test "Report expected metrics" do
+    restart_harvest_cycle(Collector.Metric.HarvestCycle)
 
+    {:ok, _} = TestRepo.insert(%TestItem{name: "first"})
+    {:ok, _} = TestRepo.insert(%TestItem{name: "second"})
+    {:ok, _} = TestRepo.insert(%TestItem{name: "third"})
+
+    items = TestRepo.all(from(i in TestItem))
     assert length(items) == 3
+
+    metrics = gather_harvest(Collector.Metric.Harvester)
+    assert find_metric(metrics, "Datastore/statement/Postgres/items/insert", 3)
+  end
+
+  defp gather_harvest(harvester) do
+    Process.sleep(300)
+    harvester.gather_harvest
+  end
+
+  defp restart_harvest_cycle(harvest_cycle) do
+    GenServer.call(harvest_cycle, :restart)
+  end
+
+  defp find_metric(metrics, name, call_count) do
+    Enum.find(metrics, fn
+      [%{name: ^name}, [^call_count, _, _, _, _, _]] -> true
+      _ -> false
+    end)
   end
 end
