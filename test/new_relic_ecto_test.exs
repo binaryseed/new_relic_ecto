@@ -40,7 +40,7 @@ defmodule NewRelicEctoTest do
 
   setup_all do
     # Instrument the Repo via Telemetry
-    NewRelic.Ecto.Telemetry.attach(repo: NewRelicEctoTest.TestRepo)
+    start_supervised({NewRelic.Ecto.Telemetry, repos: [NewRelicEctoTest.TestRepo]})
 
     # Initialize and start the Repo
     Ecto.Adapters.Postgres.storage_down(@config)

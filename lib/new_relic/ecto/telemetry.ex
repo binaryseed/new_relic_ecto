@@ -1,4 +1,15 @@
 defmodule NewRelic.Ecto.Telemetry do
+  use GenServer
+
+  def start_link(repos: repos) do
+    GenServer.start_link(__MODULE__, repos: repos)
+  end
+
+  def init(repos: repos) do
+    Enum.map(repos, &attach(repo: &1))
+    :ignore
+  end
+
   @doc "Attach the Telemetry handler for Ecto"
   def attach(repo: repo) do
     Telemetry.attach(
@@ -6,7 +17,7 @@ defmodule NewRelic.Ecto.Telemetry do
       telemetry_prefix(repo) ++ [:query],
       __MODULE__,
       :handle_event,
-      %{}
+      %{repo: repo}
     )
   end
 
@@ -15,7 +26,8 @@ defmodule NewRelic.Ecto.Telemetry do
   # * [ ] Report TT segments & DT spans
   # * [x] Increment datastore_call_count, etc
 
-  def handle_event(_event, duration_ns, metadata, _config) do
+  def handle_event(_event, duration_ns, metadata, %{repo: _repo}) do
+    # IO.inspect(metadata)
     duration_ms = System.convert_time_unit(duration_ns, :nanoseconds, :milliseconds)
     duration_s = System.convert_time_unit(duration_ns, :nanoseconds, :seconds)
 
