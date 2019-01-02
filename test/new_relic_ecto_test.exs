@@ -40,7 +40,9 @@ defmodule NewRelicEctoTest do
 
   setup_all do
     # Instrument the Repo via Telemetry
-    start_supervised({NewRelic.Ecto.Telemetry, repos: [NewRelicEctoTest.TestRepo]})
+    start_supervised(
+      {NewRelic.Ecto.Telemetry, metrics: generate_metrics([NewRelicEctoTest.TestRepo])}
+    )
 
     # Initialize and start the Repo
     Ecto.Adapters.Postgres.storage_down(@config)
@@ -62,7 +64,22 @@ defmodule NewRelicEctoTest do
     assert length(items) == 3
 
     metrics = gather_harvest(Collector.Metric.Harvester)
-    assert find_metric(metrics, "Datastore/statement/Postgres/items/insert", 3)
+
+    assert find_metric(
+             metrics,
+             "Datastore/statement/Postgres/NewRelicEctoTest.TestRepo:items/insert",
+             3
+           )
+  end
+
+  defp generate_metrics(repos) do
+    Enum.map(repos, &%{event_name: telemetry_prefix(&1) ++ [:query]})
+  end
+
+  defp telemetry_prefix(repo) do
+    repo
+    |> Module.split()
+    |> Enum.map(&(&1 |> Macro.underscore() |> String.to_atom()))
   end
 
   defp gather_harvest(harvester) do
