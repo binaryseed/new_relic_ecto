@@ -1,21 +1,29 @@
 defmodule NewRelic.Ecto.Telemetry do
   use GenServer
 
+  @handler_id :new_relic_ecto
+
   def start_link(metrics: metrics) do
     GenServer.start_link(__MODULE__, metrics: metrics)
   end
 
   def init(metrics: metrics) do
+    Process.flag(:trap_exit, true)
+
     Enum.each(metrics, fn metric ->
       :telemetry.attach(
-        "new_relic_ecto",
+        @handler_id,
         metric.event_name,
         &__MODULE__.handle_event/4,
         %{metric: metric}
       )
     end)
 
-    :ignore
+    {:ok, %{metrics: metrics}}
+  end
+
+  def terminate(reason, _state) do
+    :telemetry.detach(@handler_id)
   end
 
   # TODO:
