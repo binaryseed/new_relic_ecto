@@ -34,7 +34,7 @@ defmodule NewRelic.Ecto.Telemetry do
 
   def handle_event(
         _event,
-        duration_ns,
+        %{query_time: duration_ns},
         %{type: :ecto_sql_query, repo: repo} = metadata,
         %{metric: _metric}
       ) do
