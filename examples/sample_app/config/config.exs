@@ -1,0 +1,3 @@
+use Mix.Config
+
+if File.exists?("config/secret.exs"), do: import_config("secret.exs")
