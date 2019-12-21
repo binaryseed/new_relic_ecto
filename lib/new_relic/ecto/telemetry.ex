@@ -62,7 +62,9 @@ defmodule NewRelic.Ecto.Telemetry do
       )
 
       NewRelic.incr_attributes(
+        databaseCallCount: 1,
         datastore_call_count: 1,
+        databaseDuration: duration_s,
         datastore_duration_ms: duration_ms,
         "datastore.#{table_name}.call_count": 1,
         "datastore.#{table_name}.duration_ms": duration_ms
