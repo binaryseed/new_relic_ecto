@@ -1,29 +1,41 @@
 defmodule NewRelic.Ecto.Telemetry do
   use GenServer
 
-  @handler_id :new_relic_ecto
-
-  def start_link(metrics: metrics) do
-    GenServer.start_link(__MODULE__, metrics: metrics)
+  def start_link(otp_app: otp_app) do
+    GenServer.start_link(__MODULE__, otp_app: otp_app)
   end
 
-  def init(metrics: metrics) do
+  def init(otp_app: otp_app) do
+    handler_id = {:new_relic_ecto, otp_app}
+    events = determine_events(otp_app)
+
+    :telemetry.attach_many(
+      handler_id,
+      events,
+      &__MODULE__.handle_event/4,
+      %{otp_app: otp_app, events: events}
+    )
+
     Process.flag(:trap_exit, true)
-
-    Enum.each(metrics, fn metric ->
-      :telemetry.attach(
-        @handler_id,
-        metric.event_name,
-        &__MODULE__.handle_event/4,
-        %{metric: metric}
-      )
-    end)
-
-    {:ok, %{metrics: metrics}}
+    {:ok, %{handler_id: handler_id}}
   end
 
-  def terminate(_reason, _state) do
-    :telemetry.detach(@handler_id)
+  def terminate(_reason, %{handler_id: handler_id}) do
+    :telemetry.detach(handler_id)
+  end
+
+  defp determine_events(otp_app) do
+    Application.get_env(otp_app, :ecto_repos)
+    |> Enum.map(fn repo -> ecto_telemetry_prefix(otp_app, repo) ++ [:query] end)
+  end
+
+  defp ecto_telemetry_prefix(otp_app, repo) do
+    Application.get_env(otp_app, repo)
+    |> Keyword.get_lazy(:telemetry_prefix, fn ->
+      repo
+      |> Module.split()
+      |> Enum.map(&(&1 |> Macro.underscore() |> String.to_atom()))
+    end)
   end
 
   # TODO:
@@ -36,7 +48,7 @@ defmodule NewRelic.Ecto.Telemetry do
         _event,
         %{query_time: duration_ns},
         %{type: :ecto_sql_query, repo: repo} = metadata,
-        %{metric: _metric}
+        _config
       ) do
     duration_ms = System.convert_time_unit(duration_ns, :nanosecond, :millisecond)
     duration_s = System.convert_time_unit(duration_ns, :nanosecond, :second)

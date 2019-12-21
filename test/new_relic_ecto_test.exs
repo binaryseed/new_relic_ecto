@@ -27,9 +27,10 @@ defmodule NewRelicEctoTest do
     end
   end
 
+  # Simulate configuring an app
   @port 9999
   @config [
-    database: "new_relic_ecto",
+    database: "test_db",
     username: "postgres",
     password: "password",
     hostname: "localhost",
@@ -42,16 +43,14 @@ defmodule NewRelicEctoTest do
     # Simulate the agent fully starting up
     {:ok, _} = NewRelic.EnabledSupervisor.start_link(enabled: true)
 
-    # Instrument the Repo via Telemetry
-    start_supervised(
-      {NewRelic.Ecto.Telemetry, metrics: generate_metrics([NewRelicEctoTest.TestRepo])}
-    )
-
     # Simulate an app booting up
     Ecto.Adapters.Postgres.storage_down(@config)
     :ok = Ecto.Adapters.Postgres.storage_up(@config)
     TestRepo.start_link()
     Ecto.Migrator.run(TestRepo, [{0, TestMigration}], :up, all: true)
+
+    # Simulate an app configuring instrumentation
+    start_supervised({NewRelic.Ecto.Telemetry, otp_app: :test_app})
 
     :ok
   end
@@ -75,15 +74,7 @@ defmodule NewRelicEctoTest do
            )
   end
 
-  defp generate_metrics(repos) do
-    Enum.map(repos, &%{event_name: telemetry_prefix(&1) ++ [:query]})
-  end
-
-  defp telemetry_prefix(repo) do
-    repo
-    |> Module.split()
-    |> Enum.map(&(&1 |> Macro.underscore() |> String.to_atom()))
-  end
+  # Agent helpers
 
   defp gather_harvest(harvester) do
     Process.sleep(300)
