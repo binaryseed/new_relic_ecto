@@ -6,7 +6,7 @@ defmodule NewRelicEctoTest do
 
   # Wire up our Ecto Repo
   defmodule TestRepo do
-    use Ecto.Repo, otp_app: :new_relic_ecto, adapter: Ecto.Adapters.Postgres
+    use Ecto.Repo, otp_app: :test_app, adapter: Ecto.Adapters.Postgres
   end
 
   defmodule TestItem do
@@ -35,16 +35,19 @@ defmodule NewRelicEctoTest do
     hostname: "localhost",
     port: @port
   ]
-  Application.put_env(:new_relic_ecto, :ecto_repos, [__MODULE__.TestRepo])
-  Application.put_env(:new_relic_ecto, __MODULE__.TestRepo, @config)
+  Application.put_env(:test_app, :ecto_repos, [__MODULE__.TestRepo])
+  Application.put_env(:test_app, __MODULE__.TestRepo, @config)
 
   setup_all do
+    # Simulate the agent fully starting up
+    {:ok, _} = NewRelic.EnabledSupervisor.start_link(enabled: true)
+
     # Instrument the Repo via Telemetry
     start_supervised(
       {NewRelic.Ecto.Telemetry, metrics: generate_metrics([NewRelicEctoTest.TestRepo])}
     )
 
-    # Initialize and start the Repo
+    # Simulate an app booting up
     Ecto.Adapters.Postgres.storage_down(@config)
     :ok = Ecto.Adapters.Postgres.storage_up(@config)
     TestRepo.start_link()

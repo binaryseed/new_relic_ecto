@@ -22,7 +22,7 @@ defmodule NewRelic.Ecto.Telemetry do
     {:ok, %{metrics: metrics}}
   end
 
-  def terminate(reason, _state) do
+  def terminate(_reason, _state) do
     :telemetry.detach(@handler_id)
   end
 
@@ -38,8 +38,8 @@ defmodule NewRelic.Ecto.Telemetry do
         %{type: :ecto_sql_query, repo: repo} = metadata,
         %{metric: _metric}
       ) do
-    duration_ms = System.convert_time_unit(duration_ns, :nanoseconds, :milliseconds)
-    duration_s = System.convert_time_unit(duration_ns, :nanoseconds, :seconds)
+    duration_ms = System.convert_time_unit(duration_ns, :nanosecond, :millisecond)
+    duration_s = System.convert_time_unit(duration_ns, :nanosecond, :second)
 
     with {datastore, table, operation} <- parse_ecto_metadata(metadata) do
       table_name = "#{inspect(repo)}:#{table}"
