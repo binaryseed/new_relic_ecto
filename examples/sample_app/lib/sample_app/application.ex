@@ -7,8 +7,7 @@ defmodule SampleApp.Application do
 
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: SampleApp.Worker.start_link(arg)
-      # {SampleApp.Worker, arg}
+      Plug.Cowboy.child_spec(scheme: :http, plug: MyRouter, options: [port: 4001])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
