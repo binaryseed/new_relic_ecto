@@ -3,7 +3,7 @@ defmodule SampleAppTest do
 
   test "basic HTTP request" do
     {:ok, %{body: body}} = request()
-    assert body == "world"
+    assert body =~ "world"
   end
 
   def request() do

@@ -6,7 +6,11 @@ defmodule MyRouter do
   plug(:dispatch)
 
   get "/hello" do
-    send_resp(conn, 200, "world")
+    {:ok, _} = SampleApp.Repo.insert(%SampleApp.Count{})
+    count = SampleApp.Repo.aggregate(SampleApp.Count, :count)
+
+    response = %{hello: "world", count: count} |> Jason.encode!()
+    send_resp(conn, 200, response)
   end
 
   match _ do
