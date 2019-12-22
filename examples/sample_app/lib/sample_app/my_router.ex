@@ -10,6 +10,8 @@ defmodule MyRouter do
     count = SampleApp.Repo.aggregate(SampleApp.Count, :count)
 
     response = %{hello: "world", count: count} |> Jason.encode!()
+
+    Process.sleep(100)
     send_resp(conn, 200, response)
   end
 

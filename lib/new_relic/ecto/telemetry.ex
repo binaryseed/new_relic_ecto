@@ -6,27 +6,47 @@ defmodule NewRelic.Ecto.Telemetry do
   end
 
   def init(otp_app: otp_app) do
-    handler_id = {:new_relic_ecto, otp_app}
-    events = determine_events(otp_app)
+    %{
+      handler_id: handler_id,
+      events: events
+    } = config = extract_config(otp_app) |> IO.inspect()
 
     :telemetry.attach_many(
       handler_id,
       events,
       &__MODULE__.handle_event/4,
-      %{otp_app: otp_app, events: events}
+      config
     )
 
     Process.flag(:trap_exit, true)
-    {:ok, %{handler_id: handler_id}}
+    {:ok, config}
   end
 
   def terminate(_reason, %{handler_id: handler_id}) do
     :telemetry.detach(handler_id)
   end
 
-  defp determine_events(otp_app) do
-    Application.get_env(otp_app, :ecto_repos)
-    |> Enum.map(fn repo -> ecto_telemetry_prefix(otp_app, repo) ++ [:query] end)
+  defp extract_config(otp_app) do
+    ecto_repos = Application.get_env(otp_app, :ecto_repos)
+
+    %{
+      otp_app: otp_app,
+      events: extract_events(otp_app, ecto_repos),
+      repo_configs: extract_repo_configs(otp_app, ecto_repos),
+      handler_id: {:new_relic_ecto, otp_app}
+    }
+  end
+
+  defp extract_events(otp_app, ecto_repos) do
+    Enum.map(ecto_repos, fn repo ->
+      ecto_telemetry_prefix(otp_app, repo) ++ [:query]
+    end)
+  end
+
+  defp extract_repo_configs(otp_app, ecto_repos) do
+    Enum.into(ecto_repos, %{}, fn repo ->
+      {repo, Application.get_env(otp_app, repo)}
+    end)
   end
 
   defp ecto_telemetry_prefix(otp_app, repo) do
@@ -54,7 +74,7 @@ defmodule NewRelic.Ecto.Telemetry do
     duration_s = System.convert_time_unit(duration_ns, :nanosecond, :second)
 
     with {datastore, table, operation} <- parse_ecto_metadata(metadata) do
-      table_name = "#{inspect(repo)}:#{table}"
+      table_name = "#{inspect(repo)}.#{table}"
 
       NewRelic.report_metric(
         {:datastore, datastore, table_name, operation},
@@ -63,8 +83,8 @@ defmodule NewRelic.Ecto.Telemetry do
 
       NewRelic.incr_attributes(
         databaseCallCount: 1,
-        datastore_call_count: 1,
         databaseDuration: duration_s,
+        datastore_call_count: 1,
         datastore_duration_ms: duration_ms,
         "datastore.#{table_name}.call_count": 1,
         "datastore.#{table_name}.duration_ms": duration_ms
