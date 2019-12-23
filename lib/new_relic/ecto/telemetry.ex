@@ -60,21 +60,51 @@ defmodule NewRelic.Ecto.Telemetry do
 
   # TODO:
   # * [x] Report DataStore metrics & aggregate
-  # * [ ] Report TT segments & DT spans
+  # * [x] Report TT segments
+  # * [ ] Report DT spans
   # * [x] Increment datastore_call_count, etc
   # * [x] PR `repo` into ecto metadata
 
   def handle_event(
         _event,
-        %{query_time: duration_ns},
+        %{query_time: duration_ns} = meas,
         %{type: :ecto_sql_query, repo: repo} = metadata,
-        _config
+        config
       ) do
+    pid = inspect(self())
+    end_time = System.system_time(:millisecond)
+
     duration_ms = System.convert_time_unit(duration_ns, :nanosecond, :millisecond)
-    duration_s = System.convert_time_unit(duration_ns, :nanosecond, :second)
+    duration_s = duration_ms / 1000
+
+    start_time = end_time - duration_ms
+    repo_config = config.repo_configs[repo]
+
+    id = {:ecto_sql_query, make_ref()}
+    parent_id = Process.get(:nr_current_span) || :root
 
     with {datastore, table, operation} <- parse_ecto_metadata(metadata) do
       table_name = "#{inspect(repo)}.#{table}"
+      primary_name = "#{datastore} #{table_name} #{operation}"
+      secondary_name = "#{repo_config[:hostname]}:#{repo_config[:port]}/#{repo_config[:database]}"
+
+      NewRelic.Transaction.Reporter.add_trace_segment(%{
+        primary_name: primary_name,
+        secondary_name: secondary_name,
+        attributes: %{
+          sql: metadata.query,
+          collection: table,
+          operation: operation,
+          host: repo_config[:hostname],
+          database_name: repo_config[:database],
+          port_path_or_id: repo_config[:port]
+        },
+        pid: pid,
+        id: id,
+        parent_id: parent_id,
+        start_time: start_time,
+        end_time: end_time
+      })
 
       NewRelic.report_metric(
         {:datastore, datastore, table_name, operation},

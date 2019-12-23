@@ -1,14 +1,13 @@
 defmodule MyRouter do
   use Plug.Router
   use NewRelic.Transaction
+  use NewRelic.Tracer
 
   plug(:match)
   plug(:dispatch)
 
   get "/hello" do
-    {:ok, _} = SampleApp.Repo.insert(%SampleApp.Count{})
-    count = SampleApp.Repo.aggregate(SampleApp.Count, :count)
-
+    count = query_db()
     response = %{hello: "world", count: count} |> Jason.encode!()
 
     Process.sleep(100)
@@ -17,5 +16,12 @@ defmodule MyRouter do
 
   match _ do
     send_resp(conn, 404, "oops")
+  end
+
+  @trace :query_db
+  def query_db() do
+    {:ok, _} = SampleApp.Repo.insert(%SampleApp.Count{})
+    Process.sleep(20)
+    SampleApp.Repo.aggregate(SampleApp.Count, :count)
   end
 end

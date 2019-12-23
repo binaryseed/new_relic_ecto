@@ -12,19 +12,8 @@ defmodule SampleApp.Count do
   end
 end
 
-defmodule SampleApp.CountMigration do
-  use Ecto.Migration
-
-  def up do
-    create table("counts") do
-      timestamps()
-    end
-  end
-end
-
 defmodule SampleApp.Database do
   use GenServer
-  require SampleApp.CountMigration
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok)
@@ -35,7 +24,7 @@ defmodule SampleApp.Database do
     Ecto.Adapters.Postgres.storage_down(config)
     :ok = Ecto.Adapters.Postgres.storage_up(config)
     SampleApp.Repo.start_link()
-    Ecto.Migrator.run(SampleApp.Repo, [{0, SampleApp.CountMigration}], :up, all: true)
+    Ecto.Migrator.run(SampleApp.Repo, [{0, SampleApp.Migration}], :up, all: true)
 
     {:ok, %{}}
   end
