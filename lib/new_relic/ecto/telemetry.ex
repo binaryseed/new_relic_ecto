@@ -6,10 +6,7 @@ defmodule NewRelic.Ecto.Telemetry do
   end
 
   def init(otp_app: otp_app) do
-    %{
-      handler_id: handler_id,
-      events: events
-    } = config = extract_config(otp_app) |> IO.inspect()
+    %{handler_id: handler_id, events: events} = config = extract_config(otp_app)
 
     :telemetry.attach_many(
       handler_id,
@@ -67,7 +64,7 @@ defmodule NewRelic.Ecto.Telemetry do
 
   def handle_event(
         _event,
-        %{query_time: duration_ns} = meas,
+        %{query_time: duration_ns},
         %{type: :ecto_sql_query, repo: repo} = metadata,
         config
       ) do

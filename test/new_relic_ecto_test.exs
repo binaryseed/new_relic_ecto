@@ -47,7 +47,7 @@ defmodule NewRelicEctoTest do
     Ecto.Adapters.Postgres.storage_down(@config)
     :ok = Ecto.Adapters.Postgres.storage_up(@config)
     TestRepo.start_link()
-    Ecto.Migrator.run(TestRepo, [{0, TestMigration}], :up, all: true)
+    Ecto.Migrator.up(SampleApp.Repo, 0, SampleApp.Migration)
 
     # Simulate an app configuring instrumentation
     start_supervised({NewRelic.Ecto.Telemetry, otp_app: :test_app})

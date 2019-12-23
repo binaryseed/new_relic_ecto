@@ -8,7 +8,7 @@ defmodule SampleApp.Application do
   def start(_type, _args) do
     children = [
       SampleApp.Database,
-      Plug.Cowboy.child_spec(scheme: :http, plug: MyRouter, options: [port: 4001]),
+      Plug.Cowboy.child_spec(scheme: :http, plug: SampleApp.Router, options: [port: 4001]),
       {NewRelic.Ecto.Telemetry, otp_app: :sample_app}
     ]
 

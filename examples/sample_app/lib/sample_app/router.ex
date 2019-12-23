@@ -1,4 +1,4 @@
-defmodule MyRouter do
+defmodule SampleApp.Router do
   use Plug.Router
   use NewRelic.Transaction
   use NewRelic.Tracer
