@@ -11,3 +11,4 @@ script:
   - docker-compose up -d
   - mix format --check-formatted
   - mix test
+  - cd examples/sample_app && mix test

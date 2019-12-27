@@ -33,7 +33,7 @@ defmodule NewRelicEcto.MixProject do
   defp deps do
     [
       {:ex_doc, ">= 0.0.0", only: :dev},
-      {:new_relic_agent, "~> 1.0"},
+      {:new_relic_agent, "~> 1.14"},
       {:ecto, "~> 3.3"},
       {:ecto_sql, "~> 3.3"},
       {:telemetry, "~> 0.4"},
