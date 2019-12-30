@@ -1,4 +1,4 @@
-defmodule SampleApp.Migration do
+defmodule EctoExample.Migration do
   use Ecto.Migration
 
   def up do

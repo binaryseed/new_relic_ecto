@@ -2,12 +2,13 @@ use Mix.Config
 
 if File.exists?("config/secret.exs"), do: import_config("secret.exs")
 
-config :sample_app,
-  ecto_repos: [SampleApp.Repo]
+config :ecto_example,
+  http_port: 4001,
+  ecto_repos: [EctoExample.Repo]
 
-config :sample_app, SampleApp.Repo,
-  database: "sample_db",
+config :ecto_example, EctoExample.Repo,
+  database: "example_db",
   username: "postgres",
   password: "password",
   hostname: "localhost",
-  port: "9999"
+  port: 9999

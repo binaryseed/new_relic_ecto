@@ -1,4 +1,4 @@
-defmodule SampleApp.Count do
+defmodule EctoExample.Count do
   use Ecto.Schema
 
   schema "counts" do

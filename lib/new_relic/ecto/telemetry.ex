@@ -55,13 +55,6 @@ defmodule NewRelic.Ecto.Telemetry do
     end)
   end
 
-  # TODO:
-  # * [x] Report DataStore metrics & aggregate
-  # * [x] Report TT segments
-  # * [ ] Report DT spans
-  # * [x] Increment datastore_call_count, etc
-  # * [x] PR `repo` into ecto metadata
-
   def handle_event(
         _event,
         %{query_time: duration_ns},

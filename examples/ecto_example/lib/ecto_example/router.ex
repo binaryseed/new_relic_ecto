@@ -1,4 +1,4 @@
-defmodule SampleApp.Router do
+defmodule EctoExample.Router do
   use Plug.Router
   use NewRelic.Transaction
   use NewRelic.Tracer
@@ -20,8 +20,8 @@ defmodule SampleApp.Router do
 
   @trace :query_db
   def query_db() do
-    {:ok, _} = SampleApp.Repo.insert(%SampleApp.Count{})
+    {:ok, _} = EctoExample.Repo.insert(%EctoExample.Count{})
     Process.sleep(20)
-    SampleApp.Repo.aggregate(SampleApp.Count, :count)
+    EctoExample.Repo.aggregate(EctoExample.Count, :count)
   end
 end

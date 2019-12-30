@@ -1,9 +1,9 @@
-defmodule SampleApp.MixProject do
+defmodule EctoExample.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :sample_app,
+      app: :ecto_example,
       version: "0.1.0",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
@@ -15,7 +15,7 @@ defmodule SampleApp.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {SampleApp.Application, []}
+      mod: {EctoExample.Application, []}
     ]
   end
 

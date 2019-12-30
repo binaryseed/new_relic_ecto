@@ -1,4 +1,4 @@
-defmodule SampleApp.Database do
+defmodule EctoExample.Database do
   use GenServer
 
   def start_link(_) do
@@ -6,13 +6,13 @@ defmodule SampleApp.Database do
   end
 
   def init(:ok) do
-    config = Application.get_env(:sample_app, SampleApp.Repo)
+    config = Application.get_env(:ecto_example, EctoExample.Repo)
 
     Ecto.Adapters.Postgres.storage_down(config)
     :ok = Ecto.Adapters.Postgres.storage_up(config)
 
-    SampleApp.Repo.start_link()
-    Ecto.Migrator.up(SampleApp.Repo, 0, SampleApp.Migration)
+    EctoExample.Repo.start_link()
+    Ecto.Migrator.up(EctoExample.Repo, 0, EctoExample.Migration)
 
     {:ok, %{}}
   end
