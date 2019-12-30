@@ -1,16 +1,29 @@
-defmodule NewRelic.Ecto.Telemetry do
+defmodule NewRelic.EctoTelemetry do
   use GenServer
+
+  @moduledoc """
+  `NewRelic.EctoTelemetry` provides `Ecto` instrumentation via `telemetry`.
+
+  To install, simply add this `GenServer` to your application supervision tree
+  and configure it with the name of the `otp_app` of your Ecto repo.
+
+  ```elixir
+  children = [
+    {NewRelic.EctoTelemetry, otp_app: :ecto_example}
+  ]
+  ```
+  """
 
   def start_link(otp_app: otp_app) do
     GenServer.start_link(__MODULE__, otp_app: otp_app)
   end
 
   def init(otp_app: otp_app) do
-    %{handler_id: handler_id, events: events} = config = extract_config(otp_app)
+    config = extract_config(otp_app)
 
     :telemetry.attach_many(
-      handler_id,
-      events,
+      config.handler_id,
+      config.events,
       &__MODULE__.handle_event/4,
       config
     )
@@ -133,10 +146,7 @@ defmodule NewRelic.Ecto.Telemetry do
     :ignore
   end
 
-  # TODO:
-  # * [ ] support parse_metadata for other adapters
-
-  @insert ~r/INSERT INTO "(?<table>\w+)"/
+  @postgrex_insert ~r/INSERT INTO "(?<table>\w+)"/
   defp parse_ecto_metadata(%{
          source: table,
          query: query,
@@ -144,11 +154,37 @@ defmodule NewRelic.Ecto.Telemetry do
        }) do
     table =
       case {table, operation} do
-        {nil, :insert} -> Regex.named_captures(@insert, query)["table"]
+        {nil, :insert} -> Regex.named_captures(@postgrex_insert, query)["table"]
         {nil, _} -> "other"
         {table, _} -> table
       end
 
     {"Postgres", table, operation}
+  end
+
+  # TODO: support other adapters
+  @myxql_insert ~r/INSERT INTO `(?<table>\w+)`/
+  @myxql_select ~r/FROM `(?<table>\w+)`/
+  defp parse_ecto_metadata(%{
+         source: table,
+         query: query,
+         result: {:ok, %{__struct__: MyXQL.Result}}
+       }) do
+    {operation, table} =
+      case query do
+        "SELECT" <> _ -> {"select", capture(@myxql_select, query, "table")}
+        "INSERT" <> _ -> {"insert", capture(@myxql_insert, query, "table")}
+        _ -> {"other", "other"}
+      end
+
+    {"MySQL", table, operation}
+  end
+
+  defp parse_ecto_metadata(_) do
+    raise "Unsupported ecto adapter"
+  end
+
+  defp capture(regex, query, match) do
+    Regex.named_captures(regex, query)[match]
   end
 end

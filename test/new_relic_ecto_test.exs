@@ -28,7 +28,7 @@ defmodule NewRelicEctoTest do
   end
 
   # Simulate configuring an app
-  @port 9999
+  @port 5432
   @config [
     database: "test_db",
     username: "postgres",
@@ -50,7 +50,7 @@ defmodule NewRelicEctoTest do
     Ecto.Migrator.up(TestRepo, 0, TestMigration)
 
     # Simulate an app configuring instrumentation
-    start_supervised({NewRelic.Ecto.Telemetry, otp_app: :test_app})
+    start_supervised({NewRelic.EctoTelemetry, otp_app: :test_app})
 
     :ok
   end

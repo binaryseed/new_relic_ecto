@@ -7,8 +7,13 @@ defmodule EctoExample.Router do
   plug(:dispatch)
 
   get "/hello" do
-    count = query_db()
-    response = %{hello: "world", count: count} |> Jason.encode!()
+    response =
+      %{
+        hello: "world",
+        postgres_count: query_db(EctoExample.PostgresRepo),
+        mysql_count: query_db(EctoExample.MySQLRepo)
+      }
+      |> Jason.encode!()
 
     Process.sleep(100)
     send_resp(conn, 200, response)
@@ -19,9 +24,9 @@ defmodule EctoExample.Router do
   end
 
   @trace :query_db
-  def query_db() do
-    {:ok, _} = EctoExample.Repo.insert(%EctoExample.Count{})
+  def query_db(repo) do
+    {:ok, _} = repo.insert(%EctoExample.Count{})
     Process.sleep(20)
-    EctoExample.Repo.aggregate(EctoExample.Count, :count)
+    repo.aggregate(EctoExample.Count, :count)
   end
 end

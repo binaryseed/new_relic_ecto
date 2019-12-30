@@ -37,7 +37,7 @@ defmodule NewRelicEcto.MixProject do
       {:ecto, "~> 3.3"},
       {:ecto_sql, "~> 3.3"},
       {:telemetry, "~> 0.4"},
-      {:postgrex, ">= 0.0.0", only: :test}
+      {:postgrex, ">= 0.0.0", only: :test, optional: true}
     ]
   end
 end

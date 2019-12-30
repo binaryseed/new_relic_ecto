@@ -11,7 +11,7 @@ defmodule EctoExample.Application do
     children = [
       EctoExample.Database,
       Plug.Cowboy.child_spec(scheme: :http, plug: EctoExample.Router, options: [port: http_port]),
-      {NewRelic.Ecto.Telemetry, otp_app: :ecto_example}
+      {NewRelic.EctoTelemetry, otp_app: :ecto_example}
     ]
 
     opts = [strategy: :one_for_one, name: EctoExample.Supervisor]

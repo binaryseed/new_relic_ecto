@@ -24,6 +24,12 @@ defmodule EctoExampleTest do
              "Datastore/statement/Postgres/counts/insert",
              1
            )
+
+    assert find_metric(
+             metrics,
+             "Datastore/statement/MySQL/counts/insert",
+             1
+           )
   end
 
   def request() do

@@ -11,4 +11,6 @@ script:
   - docker-compose up -d
   - mix format --check-formatted
   - mix test
-  - ./examples/test.sh
+  - cd examples
+  - mix deps.get
+  - mix test
