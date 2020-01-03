@@ -15,12 +15,13 @@ defmodule NewRelic.EctoTelemetry do
   """
 
   def start_link(otp_app: otp_app) do
-    GenServer.start_link(__MODULE__, otp_app: otp_app)
+    ecto_repos = Application.get_env(otp_app, :ecto_repos)
+    config = extract_config(otp_app, ecto_repos)
+
+    GenServer.start_link(__MODULE__, config: config)
   end
 
-  def init(otp_app: otp_app) do
-    config = extract_config(otp_app)
-
+  def init(config: config) do
     :telemetry.attach_many(
       config.handler_id,
       config.events,
@@ -36,9 +37,7 @@ defmodule NewRelic.EctoTelemetry do
     :telemetry.detach(handler_id)
   end
 
-  defp extract_config(otp_app) do
-    ecto_repos = Application.get_env(otp_app, :ecto_repos)
-
+  defp extract_config(otp_app, ecto_repos) do
     %{
       otp_app: otp_app,
       events: extract_events(otp_app, ecto_repos),
@@ -166,7 +165,6 @@ defmodule NewRelic.EctoTelemetry do
   @myxql_insert ~r/INSERT INTO `(?<table>\w+)`/
   @myxql_select ~r/FROM `(?<table>\w+)`/
   defp parse_ecto_metadata(%{
-         source: table,
          query: query,
          result: {:ok, %{__struct__: MyXQL.Result}}
        }) do
