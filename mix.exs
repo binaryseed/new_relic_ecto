@@ -4,7 +4,7 @@ defmodule NewRelicEcto.MixProject do
   def project do
     [
       app: :new_relic_ecto,
-      description: "New Relic Instrumentation adapter for Ecto",
+      description: "[Deprecated] Part of the `new_relic_agent` now",
       version: "0.0.0",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
